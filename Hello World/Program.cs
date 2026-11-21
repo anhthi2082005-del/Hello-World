@@ -1,40 +1,79 @@
-using Autodesk.Revit.Attributes;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.AccessControl;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using System.Collections.Generic;
-using System.Windows.Forms;
+using Autodesk.Revit.DB.Structure;
+
 
 namespace Hello_World
 {
     [Autodesk.Revit.Attributes.Transaction(Autodesk.Revit.Attributes.TransactionMode.Manual)]
     public class Program : IExternalCommand
     {
-        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        public Result Execute(ExternalCommandData commandData,
+        ref string message, ElementSet elements)
         {
-            UIDocument uidoc = commandData.Application.ActiveUIDocument;
-            if (uidoc == null)
+            UIDocument uiDocument = commandData.Application.ActiveUIDocument;
+            Document document = uiDocument.Document;
+            ICollection<ElementId> selectedIds = uiDocument.Selection.GetElementIds();
+
+            if (selectedIds.Count == 0)
             {
-                MessageBox.Show("Vui lòng mở một dự án Revit trước khi chạy lệnh!");
+                TaskDialog.Show("Revit", "Hãy chọn các đối tượng trước khi chạy lệnh.");
                 return Result.Cancelled;
             }
 
-            ICollection<ElementId> selectElement = uidoc.Selection.GetElementIds();
-            int totalCount = selectElement.Count;
+            List<ElementId> filteredIds = new List<ElementId>();
+            ElementId structuralColumnCategoryId =
+                new ElementId(BuiltInCategory.OST_StructuralColumns);
 
-            MessageBox.Show("Bạn đã chọn " + totalCount + " đối tượng.");
+            int beamCount = 0;
+            int columnCount = 0;
+            int floorCount = 0;
 
-            // Phát triển code: Liệt kê ID các đối tượng được chọn
-            if (totalCount > 0)
+            foreach (ElementId id in selectedIds)
             {
-                string idList = "Danh sách ID của đối tượng:\n";
-                foreach (ElementId el in selectElement)
+                Element element = document.GetElement(id);
+
+                if (element is Floor)
                 {
-                    idList += el.ToString() + "\n";
+                    filteredIds.Add(id);
+                    floorCount++;
                 }
-                MessageBox.Show(idList);
+                else if (element is FamilyInstance familyInstance)
+                {
+                    if (familyInstance.StructuralType == StructuralType.Beam)
+                    {
+                        filteredIds.Add(id);
+                        beamCount++;
+                    }
+                    else if (structuralColumnCategoryId.Equals(familyInstance.Category?.Id))
+                    {
+                        filteredIds.Add(id);
+                        columnCount++;
+                    }
+                }
             }
+
+            uiDocument.Selection.SetElementIds(filteredIds);
+
+            TaskDialog.Show("Revit",
+                $"Số đối tượng ban đầu: {selectedIds.Count}\n" +
+                $"Dầm: {beamCount}\n" +
+                $"Cột kết cấu: {columnCount}\n" +
+                $"Sàn: {floorCount}\n" +
+                $"Tổng số đối tượng giữ lại: {filteredIds.Count}");
 
             return Result.Succeeded;
         }
     }
 }
+
+
