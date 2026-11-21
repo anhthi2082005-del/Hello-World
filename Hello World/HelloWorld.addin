@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Command">
+    <Name>Hello World</Name>
+    <Assembly>D:\LAPTRINHUNGDUNGTRONGBIM\Hello World\Hello-World\Hello World\bin\Debug\net10.0-windows\Hello World.dll</Assembly>
+    <FullClassName>Hello_World.Program</FullClassName>
+    <ClientId>132ac60a-d708-471b-ada2-3a1d0db5e7f1</ClientId>
+    <VendorId>BIM_DEV</VendorId>
+    <VendorDescription>BIM Application</VendorDescription>
+  </AddIn>
+</RevitAddIns>
